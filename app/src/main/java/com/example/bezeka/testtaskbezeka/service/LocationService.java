@@ -1,13 +1,16 @@
 package com.example.bezeka.testtaskbezeka.service;
 
+import android.Manifest;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
@@ -34,7 +37,7 @@ public class LocationService extends Service implements
     public static final String SP_LAT = "sp_lat";
     public static final String SP_LNG = "sp_lng";
     public static final String SP_KEY_DISTANCE = "sp_key_test_distance";
-    public static final String SP_KEY_UPDATE_TIME = "sp_key_test_update_time";
+    public static final String SP_KEY_DAY_OF_YEAR = "sp_key_test_update_time";
 
     private Location mLastLocation;
 
@@ -42,9 +45,9 @@ public class LocationService extends Service implements
 
     private LocationRequest mLocationRequest;
 
-    private static int UPDATE_INTERVAL = 10000; // 60 sec
-    private static int FASTEST_INTERVAL = 5000; // 30 sec
-    private static int DISPLACEMENT = 10; //100 meters
+    private static int UPDATE_INTERVAL  = 10000; // 10 sec
+    private static int FASTEST_INTERVAL = 5000; // 5 sec
+    private static int DISPLACEMENT = 10; //10 meters
 
     private static int PRIVATE_MODE = 0;
 
@@ -57,7 +60,7 @@ public class LocationService extends Service implements
     public void onCreate() {
         super.onCreate();
 
-        Log.d(TAG,"onCreate");
+        Log.d(TAG, "onCreate");
 
         sp = getSharedPreferences(SP_KEY, PRIVATE_MODE);
 
@@ -99,8 +102,6 @@ public class LocationService extends Service implements
     }
 
     protected void createLocationRequest() {
-        Log.d(TAG, "createLocationRequest");
-
         mLocationRequest = new LocationRequest();
         mLocationRequest.setInterval(UPDATE_INTERVAL);
         mLocationRequest.setFastestInterval(FASTEST_INTERVAL);
@@ -109,6 +110,16 @@ public class LocationService extends Service implements
     }
 
     protected void startLocationUpdates() {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return;
+        }
         LocationServices.FusedLocationApi
                 .requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
     }
@@ -119,6 +130,16 @@ public class LocationService extends Service implements
     }
 
     protected void getLastKnownLocation() {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return;
+        }
         mLastLocation = LocationServices.FusedLocationApi
                 .getLastLocation(mGoogleApiClient);
     }
@@ -132,6 +153,8 @@ public class LocationService extends Service implements
     public void onLocationChanged(Location location) {
         Log.i(TAG, "NEW  LOCATION IS : lat=" + location.getLatitude() + ", lng=" + location.getLongitude());
 
+        int resultDistance = 0;
+
         if (mLastLocation != null) {
             Log.i(TAG, "LAST LOCATION IS : lat=" + mLastLocation.getLatitude() + ", lng=" + mLastLocation.getLongitude());
 
@@ -143,53 +166,46 @@ public class LocationService extends Service implements
 
             distance = round(distance, 3);
 
-            Log.i(TAG, "Round distance = " + distance);
-
             distance += getDistancePref();
 
-            int resultDistance = (int) distance;
+            resultDistance = (int) distance;
 
-            int hours = getCurDate().getHours();
-            int minutes = getCurDate().getMinutes();
+            Calendar calendar = Calendar.getInstance();
 
-            Log.i(TAG, "ResultDistance = " + resultDistance + " , time = " + hours + ":" + minutes);
+            int hours = calendar.get(Calendar.HOUR_OF_DAY);
+            int minutes = calendar.get(Calendar.MINUTE);
 
-            if(isSameDay()){
-                saveDistanceAndDate(resultDistance, getCurDate().toString());
+            int month = calendar.get(Calendar.MONTH);
+            int day = calendar.get(Calendar.DAY_OF_MONTH);
+            int dayOfYear = calendar.get(Calendar.DAY_OF_MONTH);
+
+
+
+            Log.i(TAG, "ResultDistance = " + resultDistance + " , time = " + hours + ":" + minutes+", date = "+day+" / "+month);
+
+            if(isSameDay(dayOfYear)){
+                saveDistanceAndDate(resultDistance, dayOfYear);
             } else {                //if new day - start getting new location information
-                saveDistanceAndDate(0, getCurDate().toString());
+                saveDistanceAndDate(0, 0);
             }
             mLastLocation = location;
-
-
 
             Log.d(TAG, location.getLatitude()+" - "+location.getLongitude());
         } else {
             getLastKnownLocation();
             Log.i(TAG, "LAST LOCATION IS : lat=" + mLastLocation.getLatitude() + ", lng=" + mLastLocation.getLongitude());
         }
-        sendMessageToActivity(mLastLocation.getLatitude(),mLastLocation.getLongitude());
+        sendMessageToActivity(mLastLocation.getLatitude(),mLastLocation.getLongitude(), resultDistance);
 
     }
 
-    private boolean isSameDay() {
-        Calendar cal1 = Calendar.getInstance();
-        Calendar cal2 = Calendar.getInstance();
-        cal1.setTime(getCurDate());
-        cal2.setTime(getPrewDate());
-        boolean sameDay = cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR) &&
-                cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR);
-        return sameDay;
+    private boolean isSameDay(int curDayOfYear) {
+        return getPrewDayOfYear() != curDayOfYear;
     }
 
-    private Date getCurDate() {
-        Calendar c = Calendar.getInstance();
-        return c.getTime();
-    }
-
-    private Date getPrewDate() {
-        Calendar c = Calendar.getInstance();
-        return new Date(c.getTimeInMillis());
+    private int getPrewDayOfYear() {
+        int dayOfYear = sp.getInt(SP_KEY_DAY_OF_YEAR,0);
+        return dayOfYear;
     }
 
     private static float round(double number, int scale) {
@@ -206,9 +222,9 @@ public class LocationService extends Service implements
         Log.i(TAG, "GoogleApiClient connection has failed");
     }
 
-    private void saveDistanceAndDate(int distance, String date) {
+    private void saveDistanceAndDate(int distance, int dayOfYear) {
         spEditor = sp.edit();
-        spEditor.putString(SP_KEY_UPDATE_TIME, date);
+        spEditor.putInt(SP_KEY_DAY_OF_YEAR, dayOfYear);
         spEditor.putInt(SP_KEY_DISTANCE, distance);
         spEditor.commit();
     }
@@ -226,11 +242,12 @@ public class LocationService extends Service implements
     }
 
 
-    private static void sendMessageToActivity(double lat, double lng) {
+    private static void sendMessageToActivity(double lat, double lng, int distance) {
         Intent intent = new Intent("GPSLocationUpdates");
         // You can also include some extra data.
         intent.putExtra("lat", lat);
         intent.putExtra("lng", lng);
+        intent.putExtra("distance", distance);
         LocalBroadcastManager.getInstance(context).sendBroadcast(intent);
     }
 

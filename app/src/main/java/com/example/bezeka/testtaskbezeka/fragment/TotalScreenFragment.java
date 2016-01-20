@@ -50,7 +50,7 @@ public class TotalScreenFragment extends Fragment {
 
         if(distance!=0){
             if(distance>1000) {
-                tvDistance.setText("Passed: " + String.valueOf((double)(distance/1000.000))+" KM.");
+                tvDistance.setText("Passed: " + String.valueOf(distance/1000.000)+" KM.");
             } else {
                 tvDistance.setText("Passed: " + String.valueOf(distance+" M."));
             }
@@ -92,7 +92,7 @@ public class TotalScreenFragment extends Fragment {
             int distance = intent.getIntExtra("distance", 0);
             if(distance!=0){
                 if(distance>1000) {
-                    tvDistance.setText("Passed: " + String.valueOf((double)(distance/1000.000))+" KM.");
+                    tvDistance.setText("Passed: " + String.valueOf(distance/1000.000)+" KM.");
                 } else {
                     tvDistance.setText("Passed: " + String.valueOf(distance+" M."));
                 }

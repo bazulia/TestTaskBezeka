@@ -27,6 +27,8 @@
         android:layout_height="wrap_content"
         android:text="@string/done"
         android:id="@+id/btnDone"
+        android:background="@color/colorPrimary"
+        android:textColor="@android:color/white"
         android:visibility="gone"
         android:layout_gravity="center_horizontal" />
 
@@ -43,18 +45,26 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/gallery"
+        android:background="@color/colorPrimary"
+        android:textColor="@android:color/white"
+        android:layout_marginBottom="5dp"
         android:id="@+id/btnPick" />
 
     <Button
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/camera"
+        android:background="@color/colorPrimary"
+        android:textColor="@android:color/white"
+        android:layout_marginBottom="5dp"
         android:id="@+id/btnCamera"
         android:layout_gravity="center_horizontal" />
 
     <Button
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:background="@color/colorPrimary"
+        android:textColor="@android:color/white"
         android:text="@string/download_by_url"
         android:id="@+id/btnDownload"
         android:layout_gravity="center_horizontal" />

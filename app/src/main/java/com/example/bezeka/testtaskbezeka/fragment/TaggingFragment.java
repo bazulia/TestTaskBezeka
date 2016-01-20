@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
@@ -16,6 +17,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -32,6 +34,10 @@ import com.squareup.picasso.Callback;
 import com.squareup.picasso.Picasso;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.channels.FileChannel;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
@@ -97,6 +103,7 @@ public class TaggingFragment extends Fragment implements View.OnClickListener {
 
     @Override
     public void onClick(View v) {
+        hideSoftKeyboard();
         switch (v.getId()){
             case R.id.btnPick:
                 FromCard();
@@ -123,17 +130,21 @@ public class TaggingFragment extends Fragment implements View.OnClickListener {
                     image.setId(new Random().nextInt() + 99999);
                     image.setLat(lat);
                     image.setLng(lng);
-                    image.setDateTime(getDate());
+                    image.setDateTime(Calendar.getInstance().get(Calendar.DAY_OF_YEAR)+"");
                     image.setTag(etTag.getText().toString());
                     image.setPath(etTag.getText().toString());
 
-                    Toast.makeText(getActivity(),image.getLat()+" _ "+image.getLng(),Toast.LENGTH_LONG).show();
+                    try {
+                        copy(new File(path),new File(image.getPath()));
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
 
                     db.addImage(image);
 
                     clearUI();
 
-                    Toast.makeText(getActivity(),"Image added!",Toast.LENGTH_LONG).show();
+                    Toast.makeText(getActivity(),"Image "+image.getTag()+" added!",Toast.LENGTH_LONG).show();
                 } else {
                     Toast.makeText(getActivity(),"Please enter tag for image",Toast.LENGTH_LONG).show();
                 break;
@@ -146,11 +157,6 @@ public class TaggingFragment extends Fragment implements View.OnClickListener {
         DownloadImageDialogFragment dialogFragment = new DownloadImageDialogFragment();
         dialogFragment.setTargetFragment(TaggingFragment.this,REQUSERT_CODE_DOWNLOAD);
         dialogFragment.show(getActivity().getSupportFragmentManager(),dialogFragment.getClass().getSimpleName());
-    }
-
-    private String getDate(){
-        SharedPreferences sp = getActivity().getSharedPreferences(LocationService.SP_KEY, Context.MODE_PRIVATE);
-        return sp.getString(LocationService.SP_KEY_UPDATE_TIME, Calendar.getInstance().getTime().toString());
     }
 
     public void FromCamera() {
@@ -192,8 +198,6 @@ public class TaggingFragment extends Fragment implements View.OnClickListener {
 
                     path = fileUri.getPath();
 
-
-
                     setVisibleTagElements(true);
 
                     imageView.setImageURI(fileUri);
@@ -212,7 +216,9 @@ public class TaggingFragment extends Fragment implements View.OnClickListener {
                 break;
             case REQUSERT_CODE_DOWNLOAD:
                 if (resultCode == Activity.RESULT_OK) {
-                    File file = new File(DownloadImageDialogFragment.IMAGE_PATH);
+                    File file = new File(AppConfig.IMAGE_PATH);
+
+                    path = AppConfig.IMAGE_PATH;
 
                     Picasso.with(getContext())
                             .load(file)
@@ -253,22 +259,16 @@ public class TaggingFragment extends Fragment implements View.OnClickListener {
     }
 
     private boolean isDeviceSupportCamera() {
-        if (getActivity().getPackageManager().hasSystemFeature(
-                PackageManager.FEATURE_CAMERA)) {
-            // this device has a camera
-            return true;
-        } else {
-            // no camera on this device
-            return false;
-        }
+        // this device has a camera
+// no camera on this device
+        return getActivity().getPackageManager().hasSystemFeature(
+                PackageManager.FEATURE_CAMERA);
     }
 
     @Override
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
 
-        // save file url in bundle as it will be null on screen orientation
-        // changes
         outState.putParcelable("file_uri", fileUri);
     }
 
@@ -293,13 +293,8 @@ public class TaggingFragment extends Fragment implements View.OnClickListener {
             }
         }
 
-        // Create a media file name
-        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss",
-                Locale.getDefault()).format(new Date());
-        File mediaFile;
-
-        mediaFile = new File(mediaStorageDir.getPath() + File.separator
-                + "camera" + ".jpg");
+        File mediaFile = new File(mediaStorageDir.getPath() + File.separator
+                + "download" + ".jpg");
 
 
         return mediaFile;
@@ -309,5 +304,26 @@ public class TaggingFragment extends Fragment implements View.OnClickListener {
         etTag.setText("");
         imageView.setImageBitmap(null);
         setVisibleTagElements(false);
+    }
+
+    public void copy(File src, File dst) throws IOException {
+
+        System.out.println("Copy file from: "+src.getPath()+", to: "+dst.getPath());
+
+        FileInputStream inStream = new FileInputStream(src);
+        FileOutputStream outStream = new FileOutputStream(dst);
+        FileChannel inChannel = inStream.getChannel();
+        FileChannel outChannel = outStream.getChannel();
+        inChannel.transferTo(0, inChannel.size(), outChannel);
+        inStream.close();
+        outStream.close();
+    }
+
+    private void hideSoftKeyboard() {
+        View view = getActivity().getCurrentFocus();
+        if (view != null) {
+            InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
+            imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+        }
     }
 }

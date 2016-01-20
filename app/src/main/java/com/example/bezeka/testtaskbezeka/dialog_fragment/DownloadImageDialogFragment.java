@@ -1,15 +1,12 @@
 package com.example.bezeka.testtaskbezeka.dialog_fragment;
 
 import android.app.Activity;
-import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
-import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.DialogFragment;
 import android.util.Log;
@@ -23,6 +20,7 @@ import android.widget.EditText;
 import android.widget.ProgressBar;
 
 import com.example.bezeka.testtaskbezeka.R;
+import com.example.bezeka.testtaskbezeka.app.AppConfig;
 
 import java.io.BufferedInputStream;
 import java.io.FileOutputStream;
@@ -43,9 +41,7 @@ public class DownloadImageDialogFragment extends DialogFragment {
     private ProgressBar pb;
     private EditText etURL;
 
-    public static final String IMAGE_PATH = Environment
-            .getExternalStorageDirectory().toString()
-            + "/"+"download"+".img";
+
 
     @Override
     public void onStart() {
@@ -133,7 +129,7 @@ public class DownloadImageDialogFragment extends DialogFragment {
                         Locale.getDefault()).format(new Date());
 
                 // Output stream
-                OutputStream output = new FileOutputStream(IMAGE_PATH);
+                OutputStream output = new FileOutputStream(AppConfig.IMAGE_PATH);
 
                 byte data[] = new byte[1024];
 
@@ -172,7 +168,7 @@ public class DownloadImageDialogFragment extends DialogFragment {
             setCancelable(true);
             btnDownload.setEnabled(true);
             etURL.setEnabled(true);
-            if (isImageFile(IMAGE_PATH)){
+            if (isImageFile(AppConfig.IMAGE_PATH)){
                 sendResult(Activity.RESULT_OK);
 
             } else {
@@ -186,11 +182,6 @@ public class DownloadImageDialogFragment extends DialogFragment {
     private boolean isImageFile(String path){
         BitmapFactory.Options options = new BitmapFactory.Options();
         options.inJustDecodeBounds = true;
-        if (options.outWidth != -1 && options.outHeight != -1) {
-            return true;
-        }
-        else {
-            return false;
-        }
+        return options.outWidth != -1 && options.outHeight != -1;
     }
 }

@@ -1,5 +1,10 @@
 package com.example.bezeka.testtaskbezeka.fragment;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
+import android.graphics.RectF;
+import android.os.AsyncTask;
 import android.util.Log;
 
 import com.example.bezeka.testtaskbezeka.helper.DatabaseHandler;
@@ -9,11 +14,13 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import java.io.File;
 import java.util.ArrayList;
 
 /**
@@ -49,27 +56,42 @@ public class MapScreenFragment extends SupportMapFragment implements OnMapReadyC
             LatLngBounds.Builder builder = new LatLngBounds.Builder();
             for (Image image : images) {
 
-                final LatLng latLng = new LatLng((double) image.getLat(), (double) image.getLng());
-                Marker perth = mMap.addMarker(new MarkerOptions()
+                final LatLng latLng = new LatLng(image.getLat(), image.getLng());
+
+                BitmapFactory.Options options = new BitmapFactory.Options();
+                options.inPreferredConfig = Bitmap.Config.ARGB_8888;
+                Bitmap origBitmap = BitmapFactory.decodeFile(image.getPath(), options);
+
+//                Bitmap bitmap = Bitmap.createScaledBitmap(origBitmap, 100, 100, false);
+
+                Matrix m = new Matrix();
+                m.setRectToRect(new RectF(0, 0, origBitmap.getWidth(), origBitmap.getHeight()), new RectF(0, 0, 100, 100), Matrix.ScaleToFit.CENTER);
+                Bitmap bitmap = Bitmap.createBitmap(origBitmap, 0, 0, origBitmap.getWidth(), origBitmap.getHeight(), m, true);
+
+                Marker marker = mMap.addMarker(new MarkerOptions()
                         .position(latLng)
+                        .icon(BitmapDescriptorFactory.fromBitmap(bitmap))
                         .title(image.getTag()));
-                perth.showInfoWindow();
 
-                Log.d("--->", image.getLat() + " - " + image.getLng());
+                marker.showInfoWindow();
 
-                builder.include(perth.getPosition());
+                builder.include(marker.getPosition());
             }
 
             LatLngBounds bounds = builder.build();
 
-            int padding = 50; // offset from edges of the map in pixels
+            int padding = 150; // offset from edges of the map in pixels
             CameraUpdate cu = CameraUpdateFactory.newLatLngBounds(bounds, padding);
 
             mMap.animateCamera(cu);
         }
 
+    }
 
-
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        mMap = null;
     }
 
     @Override
@@ -79,6 +101,14 @@ public class MapScreenFragment extends SupportMapFragment implements OnMapReadyC
             setupAllMarkers();
         }
         setUpMapIfNeeded();
+    }
+
+    class MarkersSetupAsync extends AsyncTask<String,String,String>{
+
+        @Override
+        protected String doInBackground(String... params) {
+            return null;
+        }
     }
 
 }

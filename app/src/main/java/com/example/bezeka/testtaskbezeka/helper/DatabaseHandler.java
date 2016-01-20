@@ -10,6 +10,7 @@ import android.util.Log;
 import com.example.bezeka.testtaskbezeka.model.Image;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 
 /**
@@ -95,6 +96,39 @@ public class DatabaseHandler extends SQLiteOpenHelper {
         image.setPath(cursor.getString(4));
         // return contact
         return image;
+    }
+
+    public List<Image> getAllImagesByDay() {
+        List<Image> imageList = new ArrayList<Image>();
+        // Select All Query
+        String selectQuery = "SELECT  * FROM " + TABLE_IMAGES;
+
+        SQLiteDatabase db = this.getWritableDatabase();
+        Cursor cursor = db.rawQuery(selectQuery, null);
+
+        Calendar calendar = Calendar.getInstance();
+        int curDayOfYear = calendar.get(Calendar.DAY_OF_YEAR);
+
+        // looping through all rows and adding to list
+        if (cursor.moveToFirst()) {
+            do {
+                Image image = new Image();
+                image.setId(cursor.getInt(0));
+                image.setLat(Double.parseDouble(cursor.getString(1)));
+                image.setLng(Double.parseDouble(cursor.getString(2)));
+                image.setDateTime(cursor.getString(3));
+                image.setTag(cursor.getString(4));
+                image.setPath(cursor.getString(4));
+                // Adding image to list
+                if (cursor.getInt(3) == curDayOfYear)
+                    imageList.add(image);
+
+                Log.d("SQLite ->  Tag: ", image.getTag() + ",day of year(DB): " + image.getDateTime() + ",day of year(Calendar): " + curDayOfYear + ",lat: " + image.getLat() + ",lng: " + image.getLng());
+            } while (cursor.moveToNext());
+        }
+
+        // return images list
+        return imageList;
     }
 
     public List<Image> getAllImages() {
