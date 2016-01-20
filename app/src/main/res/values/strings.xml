@@ -1,0 +1,25 @@
+<resources>
+    <string name="app_name">TestTaskBezeka</string>
+
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+
+    <string name="action_stop_update">Stop update location</string>
+
+    <string name="tagging_image">Tagging image</string>
+    <string name="map_screen">Map screen</string>
+    <string name="total_screen">Total Screen</string>
+
+    <string name="google_maps_key">AIzaSyAsb93ur_o09WqjmUOqAIEI7Iu4IFa2OJg</string>
+
+
+
+    <string name="gallery">Gallery</string>
+    <string name="camera">Camera</string>
+    <string name="download_by_url">Download by URL</string>
+    <string name="done">Done</string>
+
+    <string name="plz_enter_url_for_download">Please enter URL of image to download</string>
+    <string name="plz_enter_tag_for_image">Please enter tag of image</string>
+    <string name="title_activity_maps">Map</string>
+</resources>

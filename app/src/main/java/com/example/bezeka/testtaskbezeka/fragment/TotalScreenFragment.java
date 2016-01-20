@@ -14,12 +14,17 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.example.bezeka.testtaskbezeka.R;
 import com.example.bezeka.testtaskbezeka.adapter.ImagesAdapter;
 import com.example.bezeka.testtaskbezeka.helper.DatabaseHandler;
+import com.example.bezeka.testtaskbezeka.model.Image;
+import com.example.bezeka.testtaskbezeka.service.LocationService;
+import com.squareup.picasso.Picasso;
 
+import java.io.File;
 import java.util.ArrayList;
 
 /**
@@ -35,15 +40,29 @@ public class TotalScreenFragment extends Fragment {
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.total_screen_fragment,container,false);
+        View view = inflater.inflate(R.layout.total_screen_fragment, container, false);
 
         tvDistance = (TextView)view.findViewById(R.id.tvDistance);
+
+        int distance = getActivity()
+                .getSharedPreferences(LocationService.SP_KEY, Context.MODE_PRIVATE)
+                .getInt(LocationService.SP_KEY_DISTANCE, 0);
+
+        if(distance!=0){
+            if(distance>1000) {
+                tvDistance.setText("Passed: " + String.valueOf((double)(distance/1000.000))+" KM.");
+            } else {
+                tvDistance.setText("Passed: " + String.valueOf(distance+" M."));
+            }
+        }
 
         rvImages = (RecyclerView) view.findViewById(R.id.rvImages);
 
         DatabaseHandler db = new DatabaseHandler(getActivity());
 
-        adapter = new ImagesAdapter(getActivity(),(ArrayList)db.getAllImages());
+        ArrayList<Image> images = (ArrayList)db.getAllImagesByDay();
+
+        adapter = new ImagesAdapter(getActivity(),images);
 
         manager = new GridLayoutManager(getActivity(),3, LinearLayoutManager.VERTICAL, false);
 
@@ -52,6 +71,12 @@ public class TotalScreenFragment extends Fragment {
         rvImages.setAdapter(adapter);
 
         return view;
+    }
+
+    @Override
+    public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        adapter.notifyDataSetChanged();
     }
 
     @Override
@@ -66,7 +91,11 @@ public class TotalScreenFragment extends Fragment {
         public void onReceive(Context context, Intent intent) {
             int distance = intent.getIntExtra("distance", 0);
             if(distance!=0){
-                tvDistance.setText(String.valueOf(distance));
+                if(distance>1000) {
+                    tvDistance.setText("Passed: " + String.valueOf((double)(distance/1000.000))+" KM.");
+                } else {
+                    tvDistance.setText("Passed: " + String.valueOf(distance+" M."));
+                }
             }
 
         }
